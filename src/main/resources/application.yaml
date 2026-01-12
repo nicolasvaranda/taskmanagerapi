@@ -1,11 +1,9 @@
 spring:
   application:
     name: task-manager-api
-  flyway:
-    enabled: false
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: validate
   h2:
     console:
       enabled: true
