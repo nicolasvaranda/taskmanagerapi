@@ -32,6 +32,5 @@ public class User {
     private List<Task> tasks = new ArrayList<>();
     @CreationTimestamp
     private LocalDateTime createdAt;
-    
 
 }
