@@ -31,7 +31,28 @@ public class TaskMapper {
         return task;
     }
 
-    //TODO toDTO(Task entity)
+    public TaskDTO toDTO(Task entity) {
+        TaskDTO taskDTO = new TaskDTO();
+        taskDTO.setId(entity.getId());
+        taskDTO.setUserId(entity.getUser().getId());
+        taskDTO.setStatus(entity.getStatus());
+        taskDTO.setTitle(entity.getTitle());
+        taskDTO.setDescription(entity.getDescription());
+        taskDTO.setCreatedAt(entity.getCreatedAt());
+        taskDTO.setUpdatedAt(entity.getUpdatedAt());
+        return taskDTO;
+    }
 
+    public void updateEntity(Task entity, TaskDTO dto) {
+        if (dto.getTitle() != null) {
+            entity.setTitle(dto.getTitle());
+        }
+        if (dto.getDescription() != null) {
+            entity.setDescription(dto.getDescription());
+        }
+        if (dto.getStatus() != null) {
+            entity.setStatus(dto.getStatus());
+        }
+    }
 
 }
