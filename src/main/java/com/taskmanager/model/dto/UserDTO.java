@@ -21,4 +21,5 @@ public class UserDTO {
     @Email(message = "Email must be valid")
     private String email;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

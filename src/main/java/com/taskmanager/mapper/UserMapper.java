@@ -20,8 +20,16 @@ public class UserMapper {
         userDTO.setEmail(userEntity.getEmail());
         userDTO.setId(userEntity.getId());
         userDTO.setCreatedAt(userEntity.getCreatedAt());
+        userDTO.setUpdatedAt(userEntity.getUpdatedAt());
         return userDTO;
     }
 
-    //updateUser
+    public void updateEntity(User entity, UserDTO dto) {
+        if (dto.getName() != null) {
+            entity.setName(dto.getName());
+        }
+        if (dto.getEmail() != null) {
+            entity.setEmail(dto.getEmail());
+        }
+    }
 }
