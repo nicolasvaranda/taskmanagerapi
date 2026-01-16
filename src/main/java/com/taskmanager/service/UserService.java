@@ -3,7 +3,9 @@ package com.taskmanager.service;
 import com.taskmanager.exception.ResourceNotFoundException;
 import com.taskmanager.mapper.UserMapper;
 import com.taskmanager.model.dto.UserDTO;
+import com.taskmanager.model.dto.UserStatsDTO;
 import com.taskmanager.model.entity.User;
+import com.taskmanager.model.enums.TaskStatus;
 import com.taskmanager.repository.TaskRepository;
 import com.taskmanager.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +32,7 @@ public class UserService {
     }
 
     public UserDTO findById(Long id) {
-        User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+        User user = findUserEntityById(id);
         return userMapper.toDTO(user);
     }
 
@@ -56,5 +58,26 @@ public class UserService {
         return userMapper.toDTO(savedUser);
     }
 
-    //todo deleteUser and getUserStats
+    public void deleteUser(Long id) {
+        User user = findUserEntityById(id);
+        userRepository.delete(user);
+    }
+
+    public UserStatsDTO getUserStats(Long id) {
+        User user = findUserEntityById(id);
+        var totalTasks = taskRepository.countByUserId(id);
+        var todoTasks = taskRepository.countByUserIdAndStatus(id, TaskStatus.TODO);
+        var inProgressTasks = taskRepository.countByUserIdAndStatus(id, TaskStatus.IN_PROGRESS);
+        var doneTasks = taskRepository.countByUserIdAndStatus(id, TaskStatus.DONE);
+
+        return UserStatsDTO.builder()
+                .userId(user.getId())
+                .userName(user.getName())
+                .totalTasks(totalTasks)
+                .todoTasks(todoTasks)
+                .inProgressTasks(inProgressTasks)
+                .doneTasks(doneTasks)
+                .completionRate(totalTasks > 0 ? (doneTasks * 100.0) / totalTasks : 0.0)
+                .build();
+    }
 }
