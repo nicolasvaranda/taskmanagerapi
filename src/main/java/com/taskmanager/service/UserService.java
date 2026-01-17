@@ -22,12 +22,11 @@ public class UserService {
     private final TaskRepository taskRepository;
 
     public UserDTO createUser(UserDTO dto) {
-        var emailExists = userRepository.existsByEmail(dto.getEmail());
-        if (emailExists) {
-            throw new IllegalArgumentException("Email already exists");
+        String email = dto.getEmail();
+        if (userRepository.existsByEmail(email)) {
+            throw new IllegalArgumentException("Email already exists: " + email);
         }
-        var userEntity = userMapper.toEntity(dto);
-        var savedEntity = userRepository.save(userEntity);
+        User savedEntity = userRepository.save(userMapper.toEntity(dto));
         return userMapper.toDTO(savedEntity);
     }
 
@@ -40,18 +39,18 @@ public class UserService {
         return userRepository.findAll(pageable).map(userMapper::toDTO);
     }
 
-    private User findUserEntityById(Long id) {
+    protected User findUserEntityById(Long id) {
         return userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     }
 
     public UserDTO updateUser(Long id, UserDTO dto) {
         User user = findUserEntityById(id);
 
-        if (dto.getEmail() != null && !dto.getEmail().equals(user.getEmail())) {
-            if (userRepository.existsByEmail(dto.getEmail())) {
-                throw new IllegalArgumentException("Email already exists: " + dto.getEmail());
-            }
+        String newEmail = dto.getEmail();
+        if (newEmail != null && !newEmail.equals(user.getEmail()) && userRepository.existsByEmail(newEmail)) {
+            throw new IllegalArgumentException("Email already exists" + newEmail);
         }
+
         userMapper.updateEntity(user, dto);
 
         User savedUser = userRepository.save(user);
@@ -70,14 +69,6 @@ public class UserService {
         var inProgressTasks = taskRepository.countByUserIdAndStatus(id, TaskStatus.IN_PROGRESS);
         var doneTasks = taskRepository.countByUserIdAndStatus(id, TaskStatus.DONE);
 
-        return UserStatsDTO.builder()
-                .userId(user.getId())
-                .userName(user.getName())
-                .totalTasks(totalTasks)
-                .todoTasks(todoTasks)
-                .inProgressTasks(inProgressTasks)
-                .doneTasks(doneTasks)
-                .completionRate(totalTasks > 0 ? (doneTasks * 100.0) / totalTasks : 0.0)
-                .build();
+        return UserStatsDTO.builder().userId(user.getId()).userName(user.getName()).totalTasks(totalTasks).todoTasks(todoTasks).inProgressTasks(inProgressTasks).doneTasks(doneTasks).completionRate(totalTasks > 0 ? (doneTasks * 100.0) / totalTasks : 0.0).build();
     }
 }
