@@ -5,6 +5,7 @@ import com.taskmanager.mapper.TaskMapper;
 import com.taskmanager.model.dto.TaskDTO;
 import com.taskmanager.model.entity.Task;
 import com.taskmanager.model.entity.User;
+import com.taskmanager.model.enums.TaskStatus;
 import com.taskmanager.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -51,6 +52,23 @@ public class TaskService {
 
     public Page<TaskDTO> findAll(Pageable pageable) {
         return taskRepository.findAll(pageable)
+                .map(taskMapper::toDTO);
+    }
+
+    public Page<TaskDTO> findByStatus(Pageable pageable, TaskStatus status) {
+        return taskRepository.findByStatus(status, pageable)
+                .map(taskMapper::toDTO);
+    }
+
+    public Page<TaskDTO> findByUserId(Pageable pageable, Long userId) {
+        User user = userService.findUserEntityById(userId);
+        return taskRepository.findByUserId(user.getId(), pageable)
+                .map(taskMapper::toDTO);
+    }
+
+    public Page<TaskDTO> findByUserIdAndStatus(Long userId, TaskStatus status, Pageable pageable) {
+        User user = userService.findUserEntityById(userId);
+        return taskRepository.findByUserIdAndStatus(user.getId(), status, pageable)
                 .map(taskMapper::toDTO);
     }
 }
