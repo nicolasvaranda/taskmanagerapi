@@ -40,7 +40,8 @@ public class UserService {
     }
 
     protected User findUserEntityById(Long id) {
-        return userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     }
 
     public UserDTO updateUser(Long id, UserDTO dto) {
@@ -69,6 +70,14 @@ public class UserService {
         var inProgressTasks = taskRepository.countByUserIdAndStatus(id, TaskStatus.IN_PROGRESS);
         var doneTasks = taskRepository.countByUserIdAndStatus(id, TaskStatus.DONE);
 
-        return UserStatsDTO.builder().userId(user.getId()).userName(user.getName()).totalTasks(totalTasks).todoTasks(todoTasks).inProgressTasks(inProgressTasks).doneTasks(doneTasks).completionRate(totalTasks > 0 ? (doneTasks * 100.0) / totalTasks : 0.0).build();
+        return UserStatsDTO.builder()
+                .userId(user.getId())
+                .userName(user.getName())
+                .totalTasks(totalTasks)
+                .todoTasks(todoTasks)
+                .inProgressTasks(inProgressTasks)
+                .doneTasks(doneTasks)
+                .completionRate(totalTasks > 0 ? (doneTasks * 100.0) / totalTasks : 0.0)
+                .build();
     }
 }
