@@ -44,6 +44,13 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     }
 
+    public UserDTO findByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+        return userMapper.toDTO(user);
+    }
+
     public UserDTO updateUser(Long id, UserDTO dto) {
         User user = findUserEntityById(id);
 
@@ -65,10 +72,10 @@ public class UserService {
 
     public UserStatsDTO getUserStats(Long id) {
         User user = findUserEntityById(id);
-        var totalTasks = taskRepository.countByUserId(id);
-        var todoTasks = taskRepository.countByUserIdAndStatus(id, TaskStatus.TODO);
-        var inProgressTasks = taskRepository.countByUserIdAndStatus(id, TaskStatus.IN_PROGRESS);
-        var doneTasks = taskRepository.countByUserIdAndStatus(id, TaskStatus.DONE);
+        long totalTasks = taskRepository.countByUserId(id);
+        long todoTasks = taskRepository.countByUserIdAndStatus(id, TaskStatus.TODO);
+        long inProgressTasks = taskRepository.countByUserIdAndStatus(id, TaskStatus.IN_PROGRESS);
+        long doneTasks = taskRepository.countByUserIdAndStatus(id, TaskStatus.DONE);
 
         return UserStatsDTO.builder()
                 .userId(user.getId())
