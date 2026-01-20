@@ -24,6 +24,26 @@ API REST para gerenciamento de tarefas com Spring Boot 3 e Java 17.
 - ✅ Migrations com Flyway
 - ✅ Testes unitários
 
+🎯 Endpoints:
+
+USERS:
+
+POST   /users                    → Criar usuário
+GET    /users/{id}               → Buscar usuário por ID
+GET    /users/search?email=...   → Buscar usuário por email
+GET    /users                    → Listar usuários (paginado)
+PUT    /users/{id}               → Atualizar usuário
+DELETE /users/{id}               → Deletar usuário
+GET    /users/{id}/tasks         → Listar tasks do usuário (com filtro opcional)
+GET    /users/{id}/stats         → Estatísticas do usuário
+
+TASKS:
+POST   /tasks                    → Criar task
+GET    /tasks/{id}               → Buscar task por ID
+GET    /tasks                    → Listar tasks (com filtro opcional por status)
+PUT    /tasks/{id}               → Atualizar task
+DELETE /tasks/{id}               → Deletar task
+
 ## 🚀 Como executar
 
 ### Pré-requisitos
