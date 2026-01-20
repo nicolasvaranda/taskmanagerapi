@@ -35,6 +35,10 @@ public class TaskService {
 
     public TaskDTO updateTask(Long id, TaskDTO dto) {
         Task taskEntity = findTaskEntityById(id);
+        if (!taskEntity.getUser().getId().equals(dto.getUserId())) {
+            User newUser = userService.findUserEntityById(dto.getUserId());
+            taskEntity.setUser(newUser);
+        }
         taskMapper.updateEntity(taskEntity, dto);
         Task savedEntity = taskRepository.save(taskEntity);
         return taskMapper.toDTO(savedEntity);

@@ -1,5 +1,6 @@
 package com.taskmanager.service;
 
+import com.taskmanager.exception.DuplicateResourceException;
 import com.taskmanager.exception.ResourceNotFoundException;
 import com.taskmanager.mapper.UserMapper;
 import com.taskmanager.model.dto.UserDTO;
@@ -24,7 +25,7 @@ public class UserService {
     public UserDTO createUser(UserDTO dto) {
         String email = dto.getEmail();
         if (userRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException("Email already exists: " + email);
+            throw new DuplicateResourceException("Email already exists: " + email);
         }
         User savedEntity = userRepository.save(userMapper.toEntity(dto));
         return userMapper.toDTO(savedEntity);
@@ -56,7 +57,7 @@ public class UserService {
 
         String newEmail = dto.getEmail();
         if (newEmail != null && !newEmail.equals(user.getEmail()) && userRepository.existsByEmail(newEmail)) {
-            throw new IllegalArgumentException("Email already exists" + newEmail);
+            throw new DuplicateResourceException("Email already exists" + newEmail);
         }
 
         userMapper.updateEntity(user, dto);
