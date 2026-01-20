@@ -1,11 +1,29 @@
 spring:
   application:
     name: task-manager-api
+
+  datasource:
+    url: jdbc:h2:mem:taskdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
   jpa:
     hibernate:
       ddl-auto: validate
+    show-sql: true
+
   h2:
     console:
       enabled: true
-  datasource:
-    url: jdbc:h2:mem:taskdb
+      path: /h2-console
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
