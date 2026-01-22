@@ -1,5 +1,6 @@
 package com.taskmanager;
 
+import com.taskmanager.exception.DuplicateResourceException;
 import com.taskmanager.mapper.UserMapper;
 import com.taskmanager.model.dto.UserDTO;
 import com.taskmanager.model.entity.User;
@@ -14,9 +15,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.postgresql.hostchooser.HostRequirement.any;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -68,4 +69,20 @@ class UserServiceTest {
         verify(userMapper, times(1)).toDTO(userEntity);
     }
 
+    @Test
+    void shouldThrowExceptionWhenEmailAlreadyExists() {
+        //given
+        when(userRepository.existsByEmail(userDTO.getEmail())).thenReturn(true);
+        //when e then
+        DuplicateResourceException exception = assertThrows(
+                DuplicateResourceException.class,
+                () -> userService.createUser(userDTO)
+        );
+
+        assertEquals("Email already exists: teste@hotmail.com", exception.getMessage());
+        verify(userRepository, times(1)).existsByEmail(userDTO.getEmail());
+        verify(userMapper, never()).toEntity(any());
+        verify(userRepository, never()).save(any());
+        verify(userMapper, never()).toDTO(any());
+    }
 }
