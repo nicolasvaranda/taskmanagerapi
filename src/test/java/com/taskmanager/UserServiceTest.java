@@ -14,10 +14,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-import static org.postgresql.hostchooser.HostRequirement.any;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -56,10 +56,8 @@ class UserServiceTest {
         when(userMapper.toEntity(userDTO)).thenReturn(userEntity);
         when(userRepository.save(userEntity)).thenReturn(userEntity);
         when(userMapper.toDTO(userEntity)).thenReturn(userDTO);
-
         //when
         UserDTO result = userService.createUser(userDTO);
-
         //then
         assertNotNull(result);
         assertEquals(userDTO.getEmail(), result.getEmail());
@@ -85,4 +83,22 @@ class UserServiceTest {
         verify(userRepository, never()).save(any());
         verify(userMapper, never()).toDTO(any());
     }
+
+    @Test
+    void shouldFindUserByIdSuccessfully() {
+        //given
+        when(userRepository.findById(userDTO.getId()))
+                .thenReturn(Optional.of(userEntity));
+        when(userMapper.toDTO(userEntity))
+                .thenReturn(userDTO);
+        //when
+        UserDTO result = userService.findById(userDTO.getId());
+        //then
+        assertNotNull(result);
+        assertEquals(userDTO.getId(), result.getId());
+        verify(userRepository, times(1)).findById(userDTO.getId());
+        verify(userMapper, times(1)).toDTO(userEntity);
+    }
+
+
 }
