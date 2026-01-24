@@ -1,6 +1,7 @@
 package com.taskmanager;
 
 import com.taskmanager.exception.DuplicateResourceException;
+import com.taskmanager.exception.ResourceNotFoundException;
 import com.taskmanager.mapper.UserMapper;
 import com.taskmanager.model.dto.UserDTO;
 import com.taskmanager.model.entity.User;
@@ -68,7 +69,7 @@ class UserServiceTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenEmailAlreadyExists() {
+    void shouldThrowDuplicateResourceExceptionWhenEmailAlreadyExists() {
         //given
         when(userRepository.existsByEmail(userDTO.getEmail())).thenReturn(true);
         //when e then
@@ -100,5 +101,21 @@ class UserServiceTest {
         verify(userMapper, times(1)).toDTO(userEntity);
     }
 
+    @Test
+    void shouldThrowResourceNotFoundWhenUserNotFound() {
+        //given
+        when(userRepository.findById(userDTO.getId()))
+                .thenReturn(Optional.empty());
+        //when e then
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
+                () -> userService.findById(userDTO.getId())
+        );
 
+        assertEquals("User not found with id: " + userDTO.getId(), exception.getMessage());
+        verify(userRepository, times(1)).findById(userDTO.getId());
+        verify(userMapper, never()).toDTO(any());
+    }
+
+    
 }
