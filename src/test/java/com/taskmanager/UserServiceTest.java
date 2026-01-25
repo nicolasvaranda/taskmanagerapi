@@ -138,13 +138,43 @@ class UserServiceTest {
         verify(userRepository, never()).save(any());
     }
 
+    @Test
+    void shouldThrowExceptionWhenUserNotFoundForUpdate() {
+        //given
+        when(userRepository.findById(userDTO.getId())).thenReturn(Optional.empty());
+        //when e then
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
+                () -> userService.updateUser(userDTO.getId(), userDTO)
+        );
+
+        assertEquals("User not found with id: " + userDTO.getId(), exception.getMessage());
+        verify(userRepository, times(1)).findById(userDTO.getId());
+        verify(userMapper, never()).updateEntity(any(), any());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldUpdateUserWithSameEmail() {
+        //given
+        when(userRepository.findById(userDTO.getId())).thenReturn(Optional.of(userEntity));
+        when(userRepository.save(userEntity)).thenReturn(userEntity);
+        when(userMapper.toDTO(userEntity)).thenReturn(userDTO);
+        //when
+        UserDTO result = userService.updateUser(userDTO.getId(), userDTO);
+        //then
+        assertNotNull(result);
+        assertEquals(userDTO.getEmail(), result.getEmail());
+        verify(userRepository, times(1)).findById(userDTO.getId());
+        verify(userMapper, times(1)).updateEntity(userEntity, userDTO);
+        verify(userRepository, times(1)).save(userEntity);
+        verify(userMapper, times(1)).toDTO(userEntity);
+    }
 
 
     /*
 updateUser()
 
-✅ shouldThrowExceptionWhenUserNotFoundForUpdate
-✅ shouldUpdateUserWithSameEmail
 ✅ shouldUpdateUserSuccessfully
 
 deleteUser()
@@ -154,7 +184,7 @@ deleteUser()
 
 getUserStats()
 
-✅ shouldReturnZeroCompletionRateWhenNoTasks ⚠️ DIVISÃO POR ZERO
+✅ shouldReturnZeroCompletionRateWhenNoTasks
 ✅ shouldCalculateCompletionRateCorrectly
 ✅ shouldThrowExceptionWhenUserNotFoundForStats
 ✅ shouldReturnUserStatsWithTasks
