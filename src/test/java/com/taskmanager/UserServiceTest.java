@@ -117,5 +117,46 @@ class UserServiceTest {
         verify(userMapper, never()).toDTO(any());
     }
 
-    
+    @Test
+    void shouldThrowExceptionWhenNewEmailAlreadyExists() {
+        //given
+        String newEmail = "novo@email.com";
+        userDTO.setEmail(newEmail);
+        when(userRepository.findById(userDTO.getId()))
+                .thenReturn(Optional.of(userEntity));
+        when(userRepository.existsByEmail(newEmail))
+                .thenReturn(true);
+        //when e then
+        DuplicateResourceException exception = assertThrows(
+                DuplicateResourceException.class,
+                () -> userService.updateUser(userDTO.getId(), userDTO));
+
+        assertEquals("Email already exists" + newEmail, exception.getMessage());
+        verify(userRepository, times(1)).findById(userDTO.getId());
+        verify(userRepository, times(1)).existsByEmail(newEmail);
+        verify(userMapper, never()).updateEntity(any(), any());
+        verify(userRepository, never()).save(any());
+    }
+
+
+
+    /*
+updateUser()
+
+✅ shouldThrowExceptionWhenUserNotFoundForUpdate
+✅ shouldUpdateUserWithSameEmail
+✅ shouldUpdateUserSuccessfully
+
+deleteUser()
+
+✅ shouldThrowExceptionWhenUserNotFoundForDeletion
+✅ shouldDeleteUserSuccessfully
+
+getUserStats()
+
+✅ shouldReturnZeroCompletionRateWhenNoTasks ⚠️ DIVISÃO POR ZERO
+✅ shouldCalculateCompletionRateCorrectly
+✅ shouldThrowExceptionWhenUserNotFoundForStats
+✅ shouldReturnUserStatsWithTasks
+     */
 }
