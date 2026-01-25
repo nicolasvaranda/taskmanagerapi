@@ -4,7 +4,10 @@ import com.taskmanager.exception.DuplicateResourceException;
 import com.taskmanager.exception.ResourceNotFoundException;
 import com.taskmanager.mapper.UserMapper;
 import com.taskmanager.model.dto.UserDTO;
+import com.taskmanager.model.dto.UserStatsDTO;
 import com.taskmanager.model.entity.User;
+import com.taskmanager.model.enums.TaskStatus;
+import com.taskmanager.repository.TaskRepository;
 import com.taskmanager.repository.UserRepository;
 import com.taskmanager.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,8 +16,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.*;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,6 +34,9 @@ class UserServiceTest {
 
     @Mock
     private UserMapper userMapper;
+
+    @Mock
+    private TaskRepository taskRepository;
 
     @InjectMocks
     private UserService userService;
@@ -171,22 +180,195 @@ class UserServiceTest {
         verify(userMapper, times(1)).toDTO(userEntity);
     }
 
+    @Test
+    void shouldUpdateUserSucessfuly() {
+        //given
+        String oldEmail = "antigo@gmail.com";
+        String newEmail = "novo@gmail.com";
+        String newName = "Novo Nome";
+        userEntity.setEmail(oldEmail);
+        userDTO.setEmail(newEmail);
+        userDTO.setName(newName);
+        when(userRepository.findById(userDTO.getId()))
+                .thenReturn(Optional.of(userEntity));
+        when(userRepository.existsByEmail(newEmail))
+                .thenReturn(false);
+        when(userRepository.save(userEntity))
+                .thenReturn(userEntity);
+        when(userMapper.toDTO(userEntity))
+                .thenReturn(userDTO);
+        //when
+        UserDTO result = userService.updateUser(userDTO.getId(), userDTO);
+        //then
+        assertNotNull(result);
+        assertEquals(newEmail, result.getEmail());
+        assertEquals(newName, result.getName());
 
-    /*
-updateUser()
+        verify(userRepository, times(1)).findById(userDTO.getId());
+        verify(userRepository, times(1)).existsByEmail(newEmail);
+        verify(userMapper, times(1)).updateEntity(userEntity, userDTO);
+        verify(userRepository, times(1)).save(userEntity);
+        verify(userMapper, times(1)).toDTO(userEntity);
+    }
 
-✅ shouldUpdateUserSuccessfully
+    @Test
+    void shouldThrowExceptionWhenUserNotFoundForDeletion() {
+        //given
+        when(userRepository.findById(userDTO.getId())).thenReturn(Optional.empty());
+        //when e then
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
+                () -> userService.deleteUser(userDTO.getId())
+        );
+        assertEquals("User not found with id: " + userDTO.getId(), exception.getMessage());
+        verify(userRepository, times(1)).findById(userDTO.getId());
+        verify(userRepository, never()).delete(any());
+    }
 
-deleteUser()
+    @Test
+    void shouldDeleteUserSucessfully() {
+        //given
+        when(userRepository.findById(userDTO.getId())).thenReturn(Optional.of(userEntity));
+        //when
+        userService.deleteUser(userDTO.getId());
+        //then
+        verify(userRepository, times(1)).findById(userDTO.getId());
+        verify(userRepository, times(1)).delete(userEntity);
+        verifyNoMoreInteractions(userRepository);
+    }
 
-✅ shouldThrowExceptionWhenUserNotFoundForDeletion
-✅ shouldDeleteUserSuccessfully
+    @Test
+    void shouldReturnZeroCompletionRateWhenNoTasks() {
+        //given
+        when(userRepository.findById(userDTO.getId()))
+                .thenReturn(Optional.of(userEntity));
+        when(taskRepository.countByUserId(userDTO.getId()))
+                .thenReturn(0L);
+        when(taskRepository.countByUserIdAndStatus(userDTO.getId(), TaskStatus.TODO))
+                .thenReturn(0L);
+        when(taskRepository.countByUserIdAndStatus(userDTO.getId(), TaskStatus.IN_PROGRESS))
+                .thenReturn(0L);
+        when(taskRepository.countByUserIdAndStatus(userDTO.getId(), TaskStatus.DONE))
+                .thenReturn(0L);
+        //when
+        UserStatsDTO result = userService.getUserStats(userDTO.getId());
+        //then
+        assertNotNull(result);
+        assertEquals(userEntity.getId(), result.getUserId());
+        assertEquals(userEntity.getName(), result.getUserName());
 
-getUserStats()
+        assertEquals(0L, result.getTotalTasks());
+        assertEquals(0L, result.getTodoTasks());
+        assertEquals(0L, result.getInProgressTasks());
+        assertEquals(0L, result.getDoneTasks());
+        assertEquals(0.0, result.getCompletionRate());
 
-✅ shouldReturnZeroCompletionRateWhenNoTasks
-✅ shouldCalculateCompletionRateCorrectly
-✅ shouldThrowExceptionWhenUserNotFoundForStats
-✅ shouldReturnUserStatsWithTasks
-     */
+        verify(userRepository, times(1)).findById(userDTO.getId());
+        verify(taskRepository, times(1)).countByUserId(userDTO.getId());
+        verify(taskRepository, times(1)).countByUserIdAndStatus(userDTO.getId(), TaskStatus.TODO);
+        verify(taskRepository, times(1)).countByUserIdAndStatus(userDTO.getId(), TaskStatus.IN_PROGRESS);
+        verify(taskRepository, times(1)).countByUserIdAndStatus(userDTO.getId(), TaskStatus.DONE);
+    }
+
+    @Test
+    void shouldCalculateCompletionRateCorrectly() {
+        //given
+        when(userRepository.findById(userDTO.getId()))
+                .thenReturn(Optional.of(userEntity));
+        when(taskRepository.countByUserId(userDTO.getId()))
+                .thenReturn(10L);
+        when(taskRepository.countByUserIdAndStatus(userDTO.getId(), TaskStatus.TODO))
+                .thenReturn(3L);
+        when(taskRepository.countByUserIdAndStatus(userDTO.getId(), TaskStatus.IN_PROGRESS))
+                .thenReturn(2L);
+        when(taskRepository.countByUserIdAndStatus(userDTO.getId(), TaskStatus.DONE))
+                .thenReturn(5L);
+        //when
+        UserStatsDTO result = userService.getUserStats(userDTO.getId());
+        //then
+        assertNotNull(result);
+        assertEquals(userEntity.getId(), result.getUserId());
+        assertEquals(userEntity.getName(), result.getUserName());
+
+        assertEquals(10L, result.getTotalTasks());
+        assertEquals(3L, result.getTodoTasks());
+        assertEquals(2L, result.getInProgressTasks());
+        assertEquals(5L, result.getDoneTasks());
+        assertEquals(50.0, result.getCompletionRate());
+
+        verify(userRepository, times(1)).findById(userDTO.getId());
+        verify(taskRepository, times(1)).countByUserId(userDTO.getId());
+        verify(taskRepository, times(1)).countByUserIdAndStatus(userDTO.getId(), TaskStatus.TODO);
+        verify(taskRepository, times(1)).countByUserIdAndStatus(userDTO.getId(), TaskStatus.IN_PROGRESS);
+        verify(taskRepository, times(1)).countByUserIdAndStatus(userDTO.getId(), TaskStatus.DONE);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUserNotFoundForStats() {
+        //given
+        when(userRepository.findById(userDTO.getId()))
+                .thenReturn(Optional.empty());
+        //when e then
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
+                () -> userService.getUserStats(userDTO.getId())
+        );
+        assertEquals("User not found with id: " + userDTO.getId(), exception.getMessage());
+        verify(userRepository, times(1)).findById(userDTO.getId());
+        verify(taskRepository, never()).countByUserId(any());
+        verify(taskRepository, never()).countByUserIdAndStatus(any(), any());
+    }
+
+    @Test
+    void shouldFindUserByEmailSuccessfully() {
+        //given
+        when(userRepository.findByEmail(userDTO.getEmail()))
+                .thenReturn(Optional.of(userEntity));
+        when(userMapper.toDTO(userEntity))
+                .thenReturn(userDTO);
+        //when
+        UserDTO result = userService.findByEmail(userDTO.getEmail());
+        //then
+        assertNotNull(result);
+        assertEquals(userDTO.getEmail(), result.getEmail());
+        verify(userRepository, times(1)).findByEmail(userDTO.getEmail());
+        verify(userMapper, times(1)).toDTO(userEntity);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUserNotFoundByEmail() {
+        //given
+        String email = "naoexiste@gmail.com";
+        when(userRepository.findByEmail(email))
+                .thenReturn(Optional.empty());
+        //when e then
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
+                () -> userService.findByEmail(email)
+        );
+        assertEquals("User not found with email: " + email, exception.getMessage());
+        verify(userRepository, times(1)).findByEmail(email);
+        verify(userMapper, never()).toDTO(any());
+    }
+
+    @Test
+    void shouldFindAllUsersSuccessfully() {
+        // given
+        Pageable customPageable = PageRequest.of(2, 5);
+        List<User> users = Arrays.asList(userEntity, userEntity);
+        Page<User> userPage = new PageImpl<>(users);
+
+        when(userRepository.findAll(customPageable)).thenReturn(userPage);
+        when(userMapper.toDTO(userEntity)).thenReturn(userDTO);
+
+        // when
+        Page<UserDTO> result = userService.findAll(customPageable);
+
+        // then
+        assertNotNull(result);
+        assertEquals(2, result.getTotalElements());
+        assertEquals(2, result.getContent().size());
+
+        verify(userRepository, times(1)).findAll(customPageable);
+    }
 }
