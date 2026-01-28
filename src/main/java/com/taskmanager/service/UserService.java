@@ -40,7 +40,7 @@ public class UserService {
         return userRepository.findAll(pageable).map(userMapper::toDTO);
     }
 
-    protected User findUserEntityById(Long id) {
+    public User findUserEntityById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     }

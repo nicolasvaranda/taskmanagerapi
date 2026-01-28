@@ -28,7 +28,7 @@ public class TaskService {
         return taskMapper.toDTO(savedTask);
     }
 
-    protected Task findTaskEntityById(Long id) {
+    public Task findTaskEntityById(Long id) {
         return taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
     }
