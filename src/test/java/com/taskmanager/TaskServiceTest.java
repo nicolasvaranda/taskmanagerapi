@@ -15,6 +15,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -95,4 +97,37 @@ class TaskServiceTest {
         verify(taskMapper, never()).toEntity(any());
         verify(taskRepository, never()).save(any());
     }
+
+    @Test
+    void shouldFindTaskByIdSuccessfully() {
+        //given
+        when(taskRepository.findById(taskDTO.getId()))
+                .thenReturn(Optional.of(taskEntity));
+        when(taskMapper.toDTO(taskEntity))
+                .thenReturn(taskDTO);
+        //when
+        TaskDTO result = taskService.findById(taskDTO.getId());
+        //then
+        assertNotNull(result);
+        assertEquals(taskDTO.getId(), result.getId());
+        verify(taskRepository).findById(taskDTO.getId());
+        verify(taskMapper).toDTO(taskEntity);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenTaskNotFoundById() {
+        //given
+        when(taskRepository.findById(taskDTO.getId())).thenReturn(Optional.empty());
+        //when e then
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
+                () -> taskService.findById(taskDTO.getId())
+        );
+        assertEquals("Task not found with id: " + taskDTO.getId(), exception.getMessage());
+        verify(taskRepository).findById(taskDTO.getId());
+        verify(taskMapper, never()).toDTO(any());
+    }
+
+
+
 }
