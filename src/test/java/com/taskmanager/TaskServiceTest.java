@@ -47,14 +47,16 @@ class TaskServiceTest {
         taskDTO.setDescription("This is a test task.");
         taskDTO.setUserId(1L);
 
+        userEntity = new User();
+        userEntity.setId(1L);
+        userEntity.setName("Test User");
+
         taskEntity = new Task();
         taskEntity.setId(1L);
         taskEntity.setTitle("Test Task");
         taskEntity.setDescription("This is a test task.");
+        taskEntity.setUser(userEntity);
 
-        userEntity = new User();
-        userEntity.setId(1L);
-        userEntity.setName("Test User");
     }
 
     @Test
@@ -126,6 +128,25 @@ class TaskServiceTest {
         assertEquals("Task not found with id: " + taskDTO.getId(), exception.getMessage());
         verify(taskRepository).findById(taskDTO.getId());
         verify(taskMapper, never()).toDTO(any());
+    }
+
+    @Test
+    void shouldUpdateTaskSuccessfully() {
+        //given
+        when(taskRepository.findById(taskDTO.getId())).thenReturn(Optional.of(taskEntity));
+        when(taskRepository.save(taskEntity)).thenReturn(taskEntity);
+        when(taskMapper.toDTO(taskEntity)).thenReturn(taskDTO);
+        //when
+        TaskDTO result = taskService.updateTask(taskDTO.getId(), taskDTO);
+        //then
+        assertNotNull(result);
+        assertEquals(taskDTO.getId(), result.getId());
+        assertEquals(taskDTO.getTitle(), result.getTitle());
+
+        verify(taskRepository).findById(taskDTO.getId());
+        verify(taskMapper).updateEntity(taskEntity, taskDTO);
+        verify(taskRepository).save(taskEntity);
+        verify(taskMapper).toDTO(taskEntity);
     }
 
 
