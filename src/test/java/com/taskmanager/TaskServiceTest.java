@@ -149,6 +149,29 @@ class TaskServiceTest {
         verify(taskMapper).toDTO(taskEntity);
     }
 
+    @Test
+    void shouldUpdateTaskWithDifferentUser() {
+        //given
+        User newUser = new User();
+        newUser.setId(2L);
+        newUser.setName("different user");
+        newUser.setEmail("diffuser@test.com");
+        taskEntity.setUser(newUser);
+        when(taskRepository.findById(taskDTO.getId())).thenReturn(Optional.of(taskEntity));
+        when(taskRepository.save(taskEntity)).thenReturn(taskEntity);
+        when(taskMapper.toDTO(taskEntity)).thenReturn(taskDTO);
+        //when
+        TaskDTO result = taskService.updateTask(taskDTO.getId(), taskDTO);
+        //then
+        assertNotNull(result);
+        assertEquals(taskDTO.getId(), result.getId());
+        assertEquals(taskDTO.getUserId(), result.getUserId());
+
+        verify(taskRepository).findById(taskDTO.getId());
+        verify(taskMapper).updateEntity(taskEntity, taskDTO);
+        verify(taskRepository).save(taskEntity);
+        verify(taskMapper).toDTO(taskEntity);
+    }
 
 
 }
