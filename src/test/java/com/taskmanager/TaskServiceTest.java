@@ -62,14 +62,10 @@ class TaskServiceTest {
     @Test
     void shouldCreateTaskSuccessfully() {
         // given
-        when(userService.findUserEntityById(taskDTO.getUserId()))
-                .thenReturn(userEntity);
-        when(taskMapper.toEntity(taskDTO))
-                .thenReturn(taskEntity);
-        when(taskRepository.save(any(Task.class)))
-                .thenReturn(taskEntity);
-        when(taskMapper.toDTO(taskEntity))
-                .thenReturn(taskDTO);
+        when(userService.findUserEntityById(taskDTO.getUserId())).thenReturn(userEntity);
+        when(taskMapper.toEntity(taskDTO)).thenReturn(taskEntity);
+        when(taskRepository.save(any(Task.class))).thenReturn(taskEntity);
+        when(taskMapper.toDTO(taskEntity)).thenReturn(taskDTO);
 
         // when
         TaskDTO result = taskService.createTask(taskDTO);
@@ -87,13 +83,9 @@ class TaskServiceTest {
     @Test
     void shouldThrowExceptionWhenUserNotFoundWhileCreatingTask() {
         //given
-        when(userService.findUserEntityById(taskDTO.getUserId()))
-                .thenThrow(new ResourceNotFoundException("User not found with id: " + taskDTO.getUserId()));
+        when(userService.findUserEntityById(taskDTO.getUserId())).thenThrow(new ResourceNotFoundException("User not found with id: " + taskDTO.getUserId()));
         //when e then
-        ResourceNotFoundException exception = assertThrows(
-                ResourceNotFoundException.class,
-                () -> taskService.createTask(taskDTO)
-        );
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> taskService.createTask(taskDTO));
         assertEquals("User not found with id: " + taskDTO.getUserId(), exception.getMessage());
         verify(userService).findUserEntityById(taskDTO.getUserId());
         verify(taskMapper, never()).toEntity(any());
@@ -103,10 +95,8 @@ class TaskServiceTest {
     @Test
     void shouldFindTaskByIdSuccessfully() {
         //given
-        when(taskRepository.findById(taskDTO.getId()))
-                .thenReturn(Optional.of(taskEntity));
-        when(taskMapper.toDTO(taskEntity))
-                .thenReturn(taskDTO);
+        when(taskRepository.findById(taskDTO.getId())).thenReturn(Optional.of(taskEntity));
+        when(taskMapper.toDTO(taskEntity)).thenReturn(taskDTO);
         //when
         TaskDTO result = taskService.findById(taskDTO.getId());
         //then
@@ -121,10 +111,7 @@ class TaskServiceTest {
         //given
         when(taskRepository.findById(taskDTO.getId())).thenReturn(Optional.empty());
         //when e then
-        ResourceNotFoundException exception = assertThrows(
-                ResourceNotFoundException.class,
-                () -> taskService.findById(taskDTO.getId())
-        );
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> taskService.findById(taskDTO.getId()));
         assertEquals("Task not found with id: " + taskDTO.getId(), exception.getMessage());
         verify(taskRepository).findById(taskDTO.getId());
         verify(taskMapper, never()).toDTO(any());
@@ -151,27 +138,31 @@ class TaskServiceTest {
 
     @Test
     void shouldUpdateTaskWithDifferentUser() {
-        //given
+        // given
         User newUser = new User();
         newUser.setId(2L);
-        newUser.setName("different user");
-        newUser.setEmail("diffuser@test.com");
-        taskEntity.setUser(newUser);
+        newUser.setName("New User");
+        newUser.setEmail("newuser@test.com");
+
+        taskDTO.setUserId(2L);
+
         when(taskRepository.findById(taskDTO.getId())).thenReturn(Optional.of(taskEntity));
+        when(userService.findUserEntityById(2L)).thenReturn(newUser);
         when(taskRepository.save(taskEntity)).thenReturn(taskEntity);
         when(taskMapper.toDTO(taskEntity)).thenReturn(taskDTO);
-        //when
+
+        // when
         TaskDTO result = taskService.updateTask(taskDTO.getId(), taskDTO);
-        //then
+
+        // then
         assertNotNull(result);
         assertEquals(taskDTO.getId(), result.getId());
-        assertEquals(taskDTO.getUserId(), result.getUserId());
+        assertEquals(2L, result.getUserId());
 
         verify(taskRepository).findById(taskDTO.getId());
+        verify(userService).findUserEntityById(2L);
         verify(taskMapper).updateEntity(taskEntity, taskDTO);
         verify(taskRepository).save(taskEntity);
         verify(taskMapper).toDTO(taskEntity);
     }
-
-
 }
