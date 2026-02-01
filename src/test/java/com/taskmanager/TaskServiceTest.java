@@ -14,7 +14,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -164,5 +170,35 @@ class TaskServiceTest {
         verify(taskMapper).updateEntity(taskEntity, taskDTO);
         verify(taskRepository).save(taskEntity);
         verify(taskMapper).toDTO(taskEntity);
+    }
+
+    @Test
+    void shouldDeleteTaskSuccessfully() {
+        //given
+        when(taskRepository.findById(taskDTO.getId())).thenReturn(Optional.of(taskEntity));
+        //when
+        taskService.deleteTask(taskDTO.getId());
+        //then
+        verify(taskRepository).findById(taskDTO.getId());
+        verify(taskRepository).delete(taskEntity);
+    }
+
+    @Test
+    void shouldFindAllTasksSuccessfully() {
+        //given
+        Pageable customPageable = PageRequest.of(2, 5);
+        List<Task> tasks = Arrays.asList(taskEntity, taskEntity);
+        Page<Task> taskPage = new PageImpl<>(tasks);
+
+        when(taskRepository.findAll(customPageable)).thenReturn(taskPage);
+        when(taskMapper.toDTO(taskEntity)).thenReturn(taskDTO);
+        //when
+        Page<TaskDTO> result = taskService.findAll(customPageable);
+        //then
+        assertNotNull(result);
+        assertEquals(2, result.getTotalElements());
+        assertEquals(2, result.getContent().size());
+        verify(taskRepository).findAll(customPageable);
+        verify(taskMapper, times(2)).toDTO(taskEntity);
     }
 }
