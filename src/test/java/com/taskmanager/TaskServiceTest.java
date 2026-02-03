@@ -201,4 +201,25 @@ class TaskServiceTest {
         verify(taskRepository).findAll(customPageable);
         verify(taskMapper, times(2)).toDTO(taskEntity);
     }
+
+    @Test
+    void shouldFindTasksByStatusSuccessfully() {
+        //given
+        Pageable customPageable = PageRequest.of(0, 10);
+        List<Task> tasks = Arrays.asList(taskEntity, taskEntity);
+        Page<Task> taskPage = new PageImpl<>(tasks);
+
+        when(taskRepository.findByStatus(taskDTO.getStatus(), customPageable)).thenReturn(taskPage);
+        when(taskMapper.toDTO(taskEntity)).thenReturn(taskDTO);
+        //when
+        Page<TaskDTO> result = taskService.findByStatus(customPageable, taskDTO.getStatus());
+        //then
+        assertNotNull(result);
+        assertEquals(2, result.getTotalElements());
+        assertEquals(2, result.getContent().size());
+        verify(taskRepository).findByStatus(taskDTO.getStatus(), customPageable);
+        verify(taskMapper, times(2)).toDTO(taskEntity);
+    }
+
+
 }
