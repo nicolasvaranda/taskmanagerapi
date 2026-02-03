@@ -5,6 +5,7 @@ import com.taskmanager.mapper.TaskMapper;
 import com.taskmanager.model.dto.TaskDTO;
 import com.taskmanager.model.entity.Task;
 import com.taskmanager.model.entity.User;
+import com.taskmanager.model.enums.TaskStatus;
 import com.taskmanager.repository.TaskRepository;
 import com.taskmanager.service.TaskService;
 import com.taskmanager.service.UserService;
@@ -52,6 +53,7 @@ class TaskServiceTest {
         taskDTO.setTitle("Test Task");
         taskDTO.setDescription("This is a test task.");
         taskDTO.setUserId(1L);
+        taskDTO.setStatus(TaskStatus.TODO);
 
         userEntity = new User();
         userEntity.setId(1L);
@@ -221,5 +223,46 @@ class TaskServiceTest {
         verify(taskMapper, times(2)).toDTO(taskEntity);
     }
 
+    @Test
+    void shouldFindTasksByUserIdSuccessfully() {
+        //given
+        Pageable customPageable = PageRequest.of(1, 5);
+        List<Task> tasks = Arrays.asList(taskEntity, taskEntity);
+        Page<Task> taskPage = new PageImpl<>(tasks);
+
+        when(userService.findUserEntityById(taskDTO.getUserId())).thenReturn(userEntity);
+        when(taskRepository.findByUserId(userEntity.getId(), customPageable)).thenReturn(taskPage);
+        when(taskMapper.toDTO(taskEntity)).thenReturn(taskDTO);
+        //when
+        Page<TaskDTO> result = taskService.findByUserId(customPageable, taskDTO.getUserId());
+        //then
+        assertNotNull(result);
+        assertEquals(2, result.getTotalElements());
+        assertEquals(2, result.getContent().size());
+        verify(userService).findUserEntityById(taskDTO.getUserId());
+        verify(taskRepository).findByUserId(userEntity.getId(), customPageable);
+        verify(taskMapper, times(2)).toDTO(taskEntity);
+    }
+
+    @Test
+    void shouldFindTasksByUserIdAndStatusSuccessfully() {
+        //given
+        Pageable customPageable = PageRequest.of(0, 10);
+        List<Task> tasks = Arrays.asList(taskEntity, taskEntity);
+        Page<Task> taskPage = new PageImpl<>(tasks);
+
+        when(userService.findUserEntityById(taskDTO.getUserId())).thenReturn(userEntity);
+        when(taskRepository.findByUserIdAndStatus(userEntity.getId(), taskDTO.getStatus(), customPageable)).thenReturn(taskPage);
+        when(taskMapper.toDTO(taskEntity)).thenReturn(taskDTO);
+        //when
+        Page<TaskDTO> result = taskService.findByUserIdAndStatus(taskDTO.getUserId(), taskDTO.getStatus(), customPageable);
+        //then
+        assertNotNull(result);
+        assertEquals(2, result.getTotalElements());
+        assertEquals(2, result.getContent().size());
+        verify(userService).findUserEntityById(taskDTO.getUserId());
+        verify(taskRepository).findByUserIdAndStatus(userEntity.getId(), taskDTO.getStatus(), customPageable);
+        verify(taskMapper, times(2)).toDTO(taskEntity);
+    }
 
 }
